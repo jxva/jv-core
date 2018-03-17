@@ -1,0 +1,14 @@
+.DS_Store
+
+*.o
+*.log
+*.layout
+*.depend
+*.stackdump
+*.exe
+
+jv_log_main
+
+bin/
+obj/
+
