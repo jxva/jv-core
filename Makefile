@@ -32,6 +32,9 @@ all:
 	$(CC) $(CFLAGS) $(INCLUDES) -c jv_main.c -o jv_main.o
 	
 	$(CC) -o $(TIME_TEST) jv_time_test.o jv_time.o $(LINKS) $(LIBS)
+	$(CC) -o $(TIME_TEST) jv_log_test.o jv_log.o jv_time.o $(LINKS) $(LIBS)
+	$(CC) -o $(TIME_TEST) jv_pool_test.o jv_pool.o jv_log.o jv_time.o $(LINKS) $(LIBS)
+	$(CC) -o $(TIME_TEST) jv_string_test.o jv_string.o jv_pool.o jv_log.o jv_time.o $(LINKS) $(LIBS)
 	$(CC) -o $(TARGET) jv_main.o jv_time.o jv_log.o jv_pool.o jv_string.o $(LINKS) $(LIBS)
 
 
