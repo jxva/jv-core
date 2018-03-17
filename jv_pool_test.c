@@ -213,10 +213,9 @@ void test4(void) {
 
   srand(time(NULL));
   for (i = 0; i < 50000; i++) {
-    jv_uint_t j = rand() % 1001;
-    s = malloc(j);
-    assert(jv_pool_free(pool, s) == JV_ERROR);
-    free(s);
+    jv_uint_t j = rand() % 1001 + 1;
+    assert((s = jv_pool_alloc(pool, j)) != NULL);
+    assert(jv_pool_free(pool, s) == JV_OK);
   }
   jv_pool_destroy(pool);
 }
@@ -290,23 +289,35 @@ void test6(void) {
 }
 
 void test7(void) {
+  #define C 10000
   jv_pool_t *pool;
+  jv_lump_t *lump[C];
   unsigned i;
 
   pool = jv_pool_create(log, 1024 * 16);
 
   srand(time(NULL));
-  for (i = 0; i < 1000; i++) {
-    jv_uint_t j = rand() % 1001;
-    jv_uint_t k = rand() % 1024 * 18;
-    jv_lump_t *lump = jv_pool_alloc(pool, j * k);
+  for (i = 0; i < C; i++) {
+    jv_uint_t j = rand() % 5 + 1;
+    jv_uint_t k = (rand() % 1024 * 3) + 1;
+    assert((lump[i] = jv_pool_alloc(pool, j * k)) != NULL);
     /* printf("allocate memory size: %lu\n", j); */
     if (lump == NULL) {
       printf("allocate memory error: %u\n", i);
       break;
     }
   }
+
+  printf("---- pool monitor, block count: %u, lump count: %d\n", pool->block_count, pool->lump_count);
+
+  for (i = 0; i < C; i++) {
+    assert(jv_pool_free(pool, lump[i]) == JV_OK);
+  }
+
+  printf("---- pool monitor, block count: %u, lump count: %d\n", pool->block_count, pool->lump_count);
+  
   /* jv_pool_dump(pool,stdout); */
+
   jv_pool_destroy(pool);
 }
 
@@ -370,15 +381,25 @@ void test10(void) {
 int main(int argc, char *argv[]) {
   log = jv_log_create(NULL, JV_LOG_WARN, 0);
 
+  printf("test1\n");
   test1();
+  printf("test2\n");
   test2();
+  printf("test3\n");
   test3();
+  printf("test4\n");
   test4();
+  printf("test5\n");
   test5();
+  printf("test6\n");
   test6();
+  printf("test7\n");
   test7();
+  printf("test8\n");
   test8();
+  printf("test9\n");
   test9();
+  printf("test10\n");
   test10();
   return 0;
 }

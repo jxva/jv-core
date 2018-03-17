@@ -30,11 +30,13 @@ struct jv_lump_s {
 
 struct jv_pool_s {
   jv_log_t *log;
-  size_t max; /* block max size */
   jv_block_t *first;
   jv_block_t *last;
   jv_lump_t *lump;
   jv_lump_t *pos; /* current idle lump's position */
+  size_t max;     /* block max size */
+  uint32_t block_count;
+  uint32_t lump_count;
 };
 
 jv_pool_t *jv_pool_create(jv_log_t *log, size_t size);

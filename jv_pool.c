@@ -39,6 +39,8 @@ jv_pool_t *jv_pool_create(jv_log_t *log, size_t size) {
   pool->max = size;
   pool->first = pool->last = block;
   pool->pos = pool->lump = lump->next = lump->prev = lump;
+  pool->block_count = 1;
+  pool->lump_count = 1;
 
   lump->size = size;
   lump->used = 0;
@@ -75,6 +77,9 @@ static void *jv_pool_slb(jv_pool_t *pool, size_t size) {
           lump->prev = p;
 
           p->size -= size + sizeof(jv_lump_t);
+
+          pool->lump_count++;
+
           jv_log_debug(pool->log, "alloc memory in lump using best fit, size is: %u", lump->size);
           return (void *) (lump + 1);
         }
@@ -150,6 +155,18 @@ jv_int_t jv_pool_exist(jv_pool_t *pool, void *ptr) {
   }
 
   l = sizeof(jv_lump_t);
+
+#if 0
+  lump = (jv_lump_t *) ((u_char *) ptr - l);
+
+  if (lump->size % (JV_WORD_SIZE / 8) != 0) {
+    jv_log_error(pool->log, "ptr not exist in memroy pool, %u", lump->size);
+    return JV_ERROR;
+  }
+
+  return JV_OK;
+
+#else
   lump = pool->lump;
 
   do {
@@ -162,6 +179,7 @@ jv_int_t jv_pool_exist(jv_pool_t *pool, void *ptr) {
   jv_log_error(pool->log, "ptr not exist in memroy pool");
 
   return JV_ERROR;
+#endif
 }
 
 void *jv_pool_realloc(jv_pool_t *pool, void *ptr, size_t size) {
@@ -188,6 +206,9 @@ static void *jv_pool_alloc_block(jv_pool_t *pool, size_t size) {
 
   pool->last->next = block;
   pool->last = block;
+
+  pool->block_count++;
+  pool->lump_count++;
 
   tail = pool->lump->prev;
 
@@ -227,6 +248,7 @@ static void *jv_pool_alloc_block(jv_pool_t *pool, size_t size) {
     free->prev = tail;
 
     pool->pos = free;
+    pool->lump_count++;
 
     jv_log_debug(pool->log, "alloc a new block with two lumps, first lump reserved for new block, last one lump alloc to applicant");
     return (void *) (alloc + 1);
@@ -250,6 +272,8 @@ static void *jv_pool_alloc_large(jv_pool_t *pool, size_t size) {
 
   pool->last->next = block;
   pool->last = block;
+  pool->block_count++;
+  pool->lump_count++;
 
   tail = pool->lump->prev;
 
@@ -292,6 +316,7 @@ jv_int_t jv_pool_free(jv_pool_t *pool, void *ptr) {
       idle->next = idle->next->next;
       idle->next->prev = idle;
       pool->pos = idle;
+      pool->lump_count--;
     }
   }
 
@@ -303,6 +328,7 @@ jv_int_t jv_pool_free(jv_pool_t *pool, void *ptr) {
       prior->next = prior->next->next;
       prior->next->prev = prior;
       pool->pos = prior;
+      pool->lump_count--;
     }
   }
 
@@ -353,6 +379,8 @@ jv_int_t jv_pool_reset(jv_pool_t *pool) {
 
   pool->first = pool->last = block;
   pool->pos = lump;
+  pool->block_count = 1;
+  pool->lump_count = 1;
 
   return JV_OK;
 }
@@ -373,21 +401,17 @@ void jv_pool_dump(jv_pool_t *pool, FILE *fd) {
   jv_lump_t *lump;
   jv_block_t *block;
   /* jv_uint_t i; */
-  int n;
 
   if (pool == NULL) {
     return;
   }
 
-  fprintf(fd, "\n┌- - - - - - - - - - - - jv memory pool monitoring - - - - - - - - - - - - -┐\n");
-  fprintf(fd, "|- - - - - - - - - - - - jv_pool_lump - - - - - - - - - - - - - - - -  - - -|\n");
+  fprintf(fd, "\n[ pool monitor, block count: %u, lump count: %u ]\n", pool->block_count, pool->lump_count);
+  fprintf(fd, "lumps: \n");
 
   lump = pool->lump;
   do {
-    char buf[12];
-    n = fprintf(fd, "| lump address: %lu, lump->size: %lu, lump->used: %lu", (unsigned long) lump, (jv_uint_t) lump->size, (jv_uint_t) lump->used);
-    sprintf(buf, "%%%d.1s\n", 77 - n);
-    fprintf(fd, buf, "|");
+    fprintf(fd, "\taddress: %-12lu size: %-10lu used: %lu\n", (unsigned long) lump, (jv_uint_t) lump->size, (jv_uint_t) lump->used);
     lump = lump->next;
   } while (lump != pool->lump);
 
@@ -397,13 +421,9 @@ void jv_pool_dump(jv_pool_t *pool, FILE *fd) {
    fprintf(fd, "| lump address:%lu, lump->size:%u, lump->used:%u \n", (unsigned long)lump, lump->size, lump->used);
    }*/
 
-  fprintf(fd, "|- - - - - - - - - - - - jv_pool_block - - - - - - - - - - - - - - - - - - -|\n");
+  fprintf(fd, "blocks\n");
 
   for (block = pool->first; block != NULL; block = block->next) {
-    char buf[12];
-    n = fprintf(fd, "| block address: %lu, block->size: %lu", (unsigned long) block, (unsigned long) block->size);
-    sprintf(buf, "%%%d.1s\n", 77 - n);
-    fprintf(fd, buf, "|");
+    fprintf(fd, "\taddress: %-12lu size: %-10lu\n", (unsigned long) block, (unsigned long) block->size);
   }
-  fprintf(fd, "└- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -  - - ┘\n\n");
 }
