@@ -1,7 +1,6 @@
 #include <jv_core.h>
 
-int jv_log_main(int argc, const char *argv[]) {
-  
+int main(int argc, const char *argv[]) {
   jv_log_t *log = jv_log_create(NULL, JV_LOG_DEBUG, 0);
 
   jv_log_debug(log, "Hello, Debug");

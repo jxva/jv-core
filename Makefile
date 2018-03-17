@@ -7,26 +7,37 @@ INCLUDES=-I.
 LIBS=
 
 LINKS=
-
+	
 TARGET=main
 
-src=$(wildcard *.c)
-dir=$(notdir $(src))
+TIME_TEST=jv_time_test
 
-C_OBJS=$(patsubst %.c, %.o,$(dir))
-#C_OBJS=$(dir:%.c=%.o)
+LOG_TEST=jv_log_test
 
-compile:$(TARGET)
+POOL_TEST=jv_pool_test
+
+STRING_TEST=jv_string_test
+
+all:	
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_time.c -o jv_time.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_log.c -o jv_log.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_pool.c -o jv_pool.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_string.c -o jv_string.o
+
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_time_test.c -o jv_time_test.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_log_test.c -o jv_log_test.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_pool_test.c -o jv_pool_test.o
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_string_test.c -o jv_string_test.o
+
+	$(CC) $(CFLAGS) $(INCLUDES) -c jv_main.c -o jv_main.o
 	
-$(C_OBJS):%.o:%.c
-	$(CC) $(CFLAGS) $(INCLUDES) -o $*.o -c $*.c
-	
-$(TARGET):$(C_OBJS)
-	$(CC) -o $(TARGET) $^ $(LIBS) $(LINKS) 
+	$(CC) -o $(TIME_TEST) jv_time_test.o jv_time.o $(LINKS) $(LIBS)
+	$(CC) -o $(TARGET) jv_main.o jv_time.o jv_log.o jv_pool.o jv_string.o $(LINKS) $(LIBS)
+
 
 	@echo 
 	@echo Project has been successfully compiled.
 	@echo
 	
 clean:
-	rm -rf $(TARGET) *.depend *.layout bin obj *.o *.stackdump *.exe *.log *~
+	rm -rf $(TARGET) $(TIME_TEST) $(LOG_TEST) $(POOL_TEST) $(STRING_TEST) *.depend *.layout bin obj *.o *.stackdump *.exe *.log *~
