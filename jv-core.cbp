@@ -3,6 +3,7 @@
 	<FileVersion major="1" minor="6" />
 	<Project>
 		<Option title="jv-core" />
+		<Option makefile_is_custom="1" />
 		<Option pch_mode="2" />
 		<Option compiler="mingw" />
 		<Build>
@@ -17,6 +18,14 @@
 					<Add option="-fexec-charset=UTF-8" />
 					<Add directory="." />
 				</Compiler>
+				<MakeCommands>
+					<Build command="$make -f $makefile" />
+					<CompileFile command="$make -f $makefile" />
+					<Clean command="$make -f $makefile clean" />
+					<DistClean command="$make -f $makefile distclean$target" />
+					<AskRebuildNeeded command="$make -q -f $makefile" />
+					<SilentBuild command="$make -f $makefile &gt; $(CMD_NULL)" />
+				</MakeCommands>
 			</Target>
 			<Target title="Release">
 				<Option output="bin/Release/jv-core" prefix_auto="1" extension_auto="1" />
@@ -37,28 +46,27 @@
 		<Compiler>
 			<Add option="-Wall" />
 		</Compiler>
+		<Unit filename="jv_config.h" />
+		<Unit filename="jv_core.h" />
 		<Unit filename="jv_log.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="jv_log.h" />
+		<Unit filename="jv_main.c">
 			<Option compilerVar="CC" />
 		</Unit>
 		<Unit filename="jv_pool.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="jv_pool.h" />
 		<Unit filename="jv_string.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="jv_string.h" />
 		<Unit filename="jv_time.c">
 			<Option compilerVar="CC" />
 		</Unit>
-
-		<Unit filename="jv_config.h" />
-		<Unit filename="jv_core.h" />
-		<Unit filename="jv_log.h" />
-		<Unit filename="jv_pool.h" />
-		<Unit filename="jv_string.h" />
 		<Unit filename="jv_time.h" />
-		<Unit filename="jv_main.c">
-			<Option compilerVar="CC" />
-		</Unit>
 		<Extensions>
 			<code_completion />
 			<envvars />

@@ -16,11 +16,16 @@ jv_pool_t *jv_pool_create(jv_log_t *log, size_t size) {
     size = JV_ALLOC_DEFAULT_SIZE;
   }
 
+  if (size > JV_ALLOC_MAX_SIZE) {
+    jv_log_crit(log, "jv_pool_create() failed, allow max memory size is %lu", JV_ALLOC_MAX_SIZE);
+    return (jv_pool_t *) NULL;
+  }
+
   size = jv_align(size, JV_WORD_SIZE / 8);
 
   cp = malloc(size + sizeof(jv_block_t) + sizeof(jv_pool_t) + sizeof(jv_lump_t));
   if (cp == NULL) {
-    jv_log_crit(log, "jv_pool_create() failed");
+    jv_log_crit(log, "jv_pool_create() failed, alloc size is %lu", size);
     return (jv_pool_t *) NULL;
   }
 
@@ -52,11 +57,11 @@ static void *jv_pool_slb(jv_pool_t *pool, size_t size) {
     p = pool->pos;
     do {
       if (p->used == 0 && p->size <= pool->max && p->size >= size) { /* first fit */
-        if (p->size <= size + 2 * sizeof(jv_lump_t)) {               /* best fit  */
+        if (p->size <= size + 2 * sizeof(jv_lump_t)) {               /* fit  */
           p->used = 1;
-          jv_log_debug(pool->log, "alloc lump memory using best fit, size is: %u", p->size);
+          jv_log_debug(pool->log, "alloc memory in lump using fit, size is: %u", p->size);
           return (void *) (p + 1);
-        } else { /* unfit */
+        } else { /* best fit */
           jv_lump_t *lump;
 
           lump = (jv_lump_t *) ((u_char *) p + p->size - size);
@@ -70,7 +75,7 @@ static void *jv_pool_slb(jv_pool_t *pool, size_t size) {
           lump->prev = p;
 
           p->size -= size + sizeof(jv_lump_t);
-          jv_log_debug(pool->log, "alloc lump memory using unfit, size is: %u", lump->size);
+          jv_log_debug(pool->log, "alloc memory in lump using best fit, size is: %u", lump->size);
           return (void *) (lump + 1);
         }
       }
@@ -78,7 +83,7 @@ static void *jv_pool_slb(jv_pool_t *pool, size_t size) {
     } while (p != pool->pos);
 
     return jv_pool_alloc_block(pool, size);
-  } else {
+  } else { /* unfit in lump pool */
     jv_lump_t *lump;
     jv_block_t *block;
 
@@ -88,7 +93,7 @@ static void *jv_pool_slb(jv_pool_t *pool, size_t size) {
         if (lump->used == 0 && (jv_uint_t)(size * 1.25 / lump->size) == 1) { /* alloc block fit */
           lump->size = block->size;
           lump->used = 1;
-          jv_log_debug(pool->log, "alloc block memory using fit, size is: %u", lump->size);
+          jv_log_debug(pool->log, "alloc memory in block using fit, size is: %u", lump->size);
           return (void *) (lump + 1);
         }
       }
@@ -200,7 +205,7 @@ static void *jv_pool_alloc_block(jv_pool_t *pool, size_t size) {
 
     pool->pos = lump;
 
-    jv_log_debug(pool->log, "alloc a new block with only one lump,  alloc all free memory of ths block to applicant");
+    jv_log_debug(pool->log, "alloc a new block with only one lump, alloc all free memory of ths block to applicant");
 
     return (void *) (lump + 1);
   } else {

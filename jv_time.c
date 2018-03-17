@@ -174,8 +174,8 @@ jv_tm_t *jv_localtime(jv_tm_t *tm) {
   localtime_r(&now, tm);
 #endif
 
-  tm->tm_mon++;
+/*  tm->tm_mon++;
   tm->tm_year += 1900;
-
+*/
   return tm;
 }

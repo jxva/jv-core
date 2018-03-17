@@ -65,10 +65,10 @@ typedef struct jv_string_s jv_string_t;
 
 #define jv_memzero(buf, n) (void *) memset(buf, 0, n)
 #define jv_memset(buf, c, n) (void *) memset(buf, c, n)
-#define jv_memcmp(s1, s2, n) (void *) memcmp(s1, s2, n)
 #define jv_memcpy(dst, src, n) (void *) memcpy(dst, src, n)
-
 #define jv_memmove(dst, src, n) (void *) memmove(dst, src, n)
+
+#define jv_memcmp(s1, s2, n) (int) memcmp(s1, s2, n)
 
 #include <jv_log.h>
 #include <jv_pool.h>

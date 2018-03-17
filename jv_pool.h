@@ -11,7 +11,7 @@
  *  (2<<31) = 2147483648
  *  (2<<63) = 9223372036854775808s
  **/
-#define JV_ALLOC_MAX_SIZE (2147483648 - JV_ALLOC_MIN_SIZE)
+#define JV_ALLOC_MAX_SIZE (2147483648U - JV_ALLOC_MIN_SIZE)
 
 typedef struct jv_block_s jv_block_t;
 typedef struct jv_lump_s jv_lump_t;
