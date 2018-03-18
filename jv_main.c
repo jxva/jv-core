@@ -10,7 +10,7 @@ int main(int argc, const char *argv[]) {
   u_char *a;
 
   log = jv_log_create(NULL, JV_LOG_DEBUG, 0);
-  pool = jv_pool_create(log, JV_ALLOC_DEFAULT_SIZE);
+  pool = jv_pool_create(log, JV_ALLOC_DEFAULT_SIZE, 1);
 
   a = jv_pool_alloc(pool, 32);
 

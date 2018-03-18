@@ -12,7 +12,7 @@ int main(int argc, const char *argv[]) {
   jv_pool_t *pool;
 
   log = jv_log_create(NULL, JV_LOG_DEBUG, 0);
-  pool = jv_pool_create(log, 4096);
+  pool = jv_pool_create(log, 4096, 1);
 
   /*--- jv_tolower ---*/
   assert(jv_tolower('A') == 'a');
