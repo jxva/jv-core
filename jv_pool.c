@@ -6,18 +6,18 @@ static void *jv_pool_alloc_block(jv_pool_t *pool, size_t size);
 
 static void *jv_pool_alloc_huge(jv_pool_t *pool, size_t size);
 
-jv_pool_t *jv_pool_create(jv_log_t *log, size_t size, unsigned safe_mode) {
+jv_pool_t *jv_pool_create(jv_log_t *log, size_t size, unsigned mode) {
   jv_pool_t *pool;
   jv_block_t *block;
   jv_lump_t *lump;
   u_char *cp;
 
-  if (size < JV_ALLOC_MIN_SIZE) {
-    size = JV_ALLOC_DEFAULT_SIZE;
+  if (size < JV_POOL_MIN_SIZE) {
+    size = JV_POOL_DEFAULT_SIZE;
   }
 
-  if (size > JV_ALLOC_MAX_SIZE) {
-    jv_log_crit(log, "jv_pool_create() failed, allow max memory size is %lu", JV_ALLOC_MAX_SIZE);
+  if (size > JV_POOL_MAX_SIZE) {
+    jv_log_crit(log, "jv_pool_create() failed, allow max memory size is %lu", JV_POOL_MAX_SIZE);
     return (jv_pool_t *) NULL;
   }
 
@@ -46,8 +46,8 @@ jv_pool_t *jv_pool_create(jv_log_t *log, size_t size, unsigned safe_mode) {
   lump->used = 0;
 
   pool->log = log;
-  pool->safe_mode = safe_mode > 0 ? 1 : 0;
-
+  pool->mode = mode == JV_POOL_QUICK_MODE ? JV_POOL_QUICK_MODE : JV_POOL_SAFE_MODE;
+  
   jv_log_debug(pool->log, "create a new memory pool, size is %lu", (jv_uint_t) size);
 
   return pool;
@@ -60,7 +60,7 @@ static void *jv_pool_slb(jv_pool_t *pool, size_t size) {
     p = pool->idle;
     do {
       if (p->used == 0 && p->size <= pool->size && p->size >= size) { /* first fit */
-        if (p->size <= size + 2 * sizeof(jv_lump_t)) {               /* fit  */
+        if (p->size <= size + 2 * sizeof(jv_lump_t)) {                /* fit  */
           p->used = 1;
           jv_log_debug(pool->log, "alloc memory in lump using fit, size is: %u", p->size);
           return (void *) (p + 1);
@@ -117,8 +117,8 @@ void *jv_pool_alloc(jv_pool_t *pool, size_t size) {
     return NULL;
   }
 
-  if (size > JV_ALLOC_MAX_SIZE) {
-    jv_log_alert(pool->log, "alloc memory is too huge, allow max memory size is: %u", JV_ALLOC_MAX_SIZE);
+  if (size > JV_POOL_MAX_SIZE) {
+    jv_log_alert(pool->log, "alloc memory is too huge, allow max memory size is: %u", JV_POOL_MAX_SIZE);
     return NULL;
   }
 
@@ -157,7 +157,16 @@ jv_int_t jv_pool_exist(jv_pool_t *pool, void *ptr) {
 
   l = sizeof(jv_lump_t);
 
-  if (pool->safe_mode) {
+  if (pool->mode == JV_POOL_QUICK_MODE) {
+    lump = (jv_lump_t *) ((u_char *) ptr - l);
+
+    if (lump->size % (JV_WORD_SIZE / 8) != 0) {
+      jv_log_error(pool->log, "lump not exist in memroy pool, size is %u", lump->size);
+      return JV_ERROR;
+    }
+
+    return JV_OK;
+  } else {
     lump = pool->lump;
 
     do {
@@ -168,17 +177,7 @@ jv_int_t jv_pool_exist(jv_pool_t *pool, void *ptr) {
     } while (lump != pool->lump);
 
     jv_log_error(pool->log, "ptr not exist in memroy pool");
-
     return JV_ERROR;
-  } else {
-    lump = (jv_lump_t *) ((u_char *) ptr - l);
-
-    if (lump->size % (JV_WORD_SIZE / 8) != 0) {
-      jv_log_error(pool->log, "ptr not exist in memroy pool, %u", lump->size);
-      return JV_ERROR;
-    }
-
-    return JV_OK;
   }
 }
 
@@ -196,7 +195,7 @@ static void *jv_pool_alloc_block(jv_pool_t *pool, size_t size) {
 
   cp = malloc(pool->size + sizeof(jv_block_t) + sizeof(jv_lump_t));
   if (cp == NULL) {
-    jv_log_alert(pool->log, "alloc block memory failed, alloc size is %lu", (jv_uint_t) pool->size);
+    jv_log_crit(pool->log, "alloc block memory failed, alloc size is %lu", (jv_uint_t) pool->size);
     return NULL;
   }
 
@@ -262,7 +261,7 @@ static void *jv_pool_alloc_huge(jv_pool_t *pool, size_t size) {
 
   cp = malloc(size + sizeof(jv_block_t) + sizeof(jv_lump_t));
   if (cp == NULL) {
-    jv_log_alert(pool->log, "alloc huge memory failed, alloc size is %lu", (jv_uint_t) size);
+    jv_log_crit(pool->log, "alloc huge memory failed, alloc size is %lu", (jv_uint_t) size);
     return NULL;
   }
 
@@ -345,6 +344,7 @@ jv_int_t jv_pool_recycle(jv_pool_t *pool, void *ptr) {
   lump = (jv_lump_t *) ((u_char *) ptr - sizeof(jv_lump_t));
 
   if (lump->size % (JV_WORD_SIZE / 8) != 0) {
+    jv_log_crit(pool->log, "recycle's ptr not in the memory pool, size is %lu", (jv_uint_t) lump->size);
     return JV_ERROR;
   }
 

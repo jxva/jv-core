@@ -1,8 +1,10 @@
 #include <jv_log.h>
 
-#define JV_LINE_BUFFER_SIZE 10240
+#define JV_LOG_LINE_BUFFER_SIZE 10240
 
 static const char *prioritys[] = {"emerg", "alert", "crit", "error", "warn", "notice", "info", "debug"};
+
+static inline void jv_log_out(FILE *fd, const char *fmt, va_list *args);
 
 static inline void jv_log_write(jv_log_t *log, jv_uint_t priority, const char *fmt, va_list *args);
 
@@ -10,11 +12,11 @@ static inline void jv_log_write(jv_log_t *log, jv_uint_t priority, const char *f
   char datetime[20];
   struct tm ptm;
   jv_int_t n;
-  char buf[JV_LINE_BUFFER_SIZE];
+  char buf[JV_LOG_LINE_BUFFER_SIZE];
 
   strftime(datetime, sizeof(datetime), "%Y-%m-%d %X", jv_localtime(&ptm));
 
-  jv_memzero(buf, JV_LINE_BUFFER_SIZE);
+  jv_memzero(buf, JV_LOG_LINE_BUFFER_SIZE);
 
   n = sprintf(buf, "%s %-8s", datetime, prioritys[priority]);
   n += vsprintf(buf + n, fmt, *args);
@@ -23,31 +25,81 @@ static inline void jv_log_write(jv_log_t *log, jv_uint_t priority, const char *f
   fwrite(buf, n, 1, log->fd);
 
   /*
-    fprintf(log->fd, "%-6lu, %s %-8s ", log->line_count, datetime, prioritys[priority]);
+    fprintf(log->fd, "%-6lu, %s %-8s ", log->count, datetime, prioritys[priority]);
     vfprintf(log->fd, fmt, *args);
     fprintf(log->fd, "\n");
   */
 
-  log->line_count++;
+  log->count++;
 
-  if (log->cache_line == 0 || log->line_count % log->cache_line == 0) {
+  if (log->mode == JV_LOG_FLUSH_MODE || log->count % 10 == 0) {
     fflush(log->fd);
   }
 }
 
-jv_log_t *jv_log_create(u_char *filename, jv_uint_t priority, jv_uint_t cache_line) {
+static inline void jv_log_out(FILE *fd, const char *fmt, va_list *args) {
+  char datetime[20];
+  struct tm ptm;
+  jv_int_t n;
+  char buf[JV_LOG_LINE_BUFFER_SIZE];
+
+  strftime(datetime, sizeof(datetime), "%Y-%m-%d %X", jv_localtime(&ptm));
+
+  jv_memzero(buf, JV_LOG_LINE_BUFFER_SIZE);
+
+  n = sprintf(buf, "%s %-8s", datetime, fd == stdout ? "stdout" : "stderr");
+  n += vsprintf(buf + n, fmt, *args);
+  n += snprintf(buf + n, 2, "\n");
+
+  fwrite(buf, n, 1, fd);
+
+  /*fprintf(fd, buf);*/
+  fflush(fd);
+}
+
+jv_log_t *jv_log_create(u_char *filename, unsigned priority, unsigned mode) {
   jv_log_t *log = malloc(sizeof(jv_log_t));
 
   if (log == NULL) {
+    jv_log_stderr("jv_log_create() failed");
     return (jv_log_t *) NULL;
   }
 
-  log->fd = filename == NULL ? stdout : fopen((char *) filename, "a+");
+  if(filename==NULL) {
+    log->fd = stdout;
+  } else {
+    FILE *fd;
+    if((fd = fopen((char *) filename, "a+"))==NULL) {
+      free(log);
+      jv_log_stderr("open file '%s' failed: %s", (char *)filename, strerror(errno));
+      return (jv_log_t *) NULL;
+    }
+    log->fd = fd;
+  }
+
   log->priority = priority;
-  log->line_count = 0;
-  log->cache_line = cache_line;
+  log->count = 0;
+  log->mode = mode == JV_LOG_FLUSH_MODE ? JV_LOG_FLUSH_MODE : JV_LOG_CACHE_MODE;
 
   return log;
+}
+
+void jv_log_stdout(const char *fmt, ...) {
+#ifdef DEBUG
+  va_list args;
+
+  va_start(args, fmt);
+  jv_log_out(stdout, fmt, &args);
+  va_end(args);
+#endif
+}
+
+void jv_log_stderr(const char *fmt, ...) {
+  va_list args;
+
+  va_start(args, fmt);
+  jv_log_out(stderr, fmt, &args);
+  va_end(args);
 }
 
 void jv_log_emerg(jv_log_t *log, const char *fmt, ...) {
@@ -60,9 +112,6 @@ void jv_log_emerg(jv_log_t *log, const char *fmt, ...) {
   va_start(args, fmt);
   jv_log_write(log, JV_LOG_EMERG, fmt, &args);
   va_end(args);
-
-  /* jv_log_destroy(log);
-   exit(-1); */
 }
 
 void jv_log_alert(jv_log_t *log, const char *fmt, ...) {

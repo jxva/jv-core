@@ -9,8 +9,8 @@ int main(int argc, const char *argv[]) {
   jv_uint_t i;
   u_char *a;
 
-  log = jv_log_create(NULL, JV_LOG_DEBUG, 0);
-  pool = jv_pool_create(log, JV_ALLOC_DEFAULT_SIZE, 1);
+  log = jv_log_create(NULL, JV_LOG_DEBUG, JV_LOG_FLUSH_MODE);
+  pool = jv_pool_create(log, JV_POOL_DEFAULT_SIZE, JV_POOL_SAFE_MODE);
 
   a = jv_pool_alloc(pool, 32);
 
@@ -18,7 +18,7 @@ int main(int argc, const char *argv[]) {
 
   a[31] = '\0';
 
-  printf("a:%s, len:%lu\n", a, (jv_uint_t)jv_pool_sizeof(pool, a));
+  printf("a:%s, len:%lu\n", a, (jv_uint_t) jv_pool_sizeof(pool, a));
 
   a = jv_pool_realloc(pool, a, 64);
 
@@ -28,7 +28,7 @@ int main(int argc, const char *argv[]) {
 
   a[63] = '\0';
 
-  printf("a:%s, len:%lu\n", a, (jv_uint_t)jv_pool_sizeof(pool, a));
+  printf("a:%s, len:%lu\n", a, (jv_uint_t) jv_pool_sizeof(pool, a));
 
   jv_pool_dump(pool, stdout);
 

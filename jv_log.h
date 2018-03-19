@@ -12,14 +12,23 @@
 #define JV_LOG_INFO 6
 #define JV_LOG_DEBUG 7
 
+#define JV_LOG_FLUSH_MODE 0
+
+#define JV_LOG_CACHE_MODE 1
+
 struct jv_log_s {
   FILE *fd;
-  jv_uint_t line_count;
+  jv_uint_t count; /* log line count */
   unsigned priority : 4;
-  unsigned cache_line : 28;
+  unsigned mode : 1;
+  unsigned :0;
 };
 
-jv_log_t *jv_log_create(u_char *filename, jv_uint_t priority, jv_uint_t cache_line);
+jv_log_t *jv_log_create(u_char *filename, unsigned priority, unsigned mode);
+
+void jv_log_stdout(const char *fmt, ...);
+
+void jv_log_stderr(const char *fmt, ...);
 
 void jv_log_emerg(jv_log_t *log, const char *fmt, ...);
 

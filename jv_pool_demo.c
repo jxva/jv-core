@@ -1,7 +1,7 @@
 #include <assert.h>
 #include <jv_pool.h>
 
-static jv_log_t *log;
+static jv_log_t *_log;
 
 void test1(void) {
   jv_pool_t *pool;
@@ -11,7 +11,7 @@ void test1(void) {
   jv_lump_t *lump;
   u_char *s;
 
-  pool = jv_pool_create(log, 128, 1);
+  pool = jv_pool_create(_log, JV_POOL_DEFAULT_SIZE, 1);
 
   base = (jv_uint_t) pool - sizeof(jv_block_t);
 
@@ -164,7 +164,7 @@ void test2(void) {
   jv_pool_t *pool;
   unsigned i;
 
-  pool = jv_pool_create(log, 1024 * 16, 1);
+  pool = jv_pool_create(_log, 1024 * 16, 1);
 
   srand(time(NULL));
   for (i = 0; i < 10000; i++) {
@@ -189,7 +189,7 @@ void test3(void) {
   jv_pool_t *pool;
   unsigned i;
 
-  pool = jv_pool_create(log, 1024 * 16, 1);
+  pool = jv_pool_create(_log, 1024 * 16, 1);
 
   srand(time(NULL));
   for (i = 0; i < 10000; i++) {
@@ -209,7 +209,7 @@ void test3(void) {
 void test4(void) {
   jv_pool_t *pool;
   unsigned i, *s;
-  pool = jv_pool_create(log, 1024 * 16, 1);
+  pool = jv_pool_create(_log, 1024 * 16, 1);
 
   srand(time(NULL));
   for (i = 0; i < 50000; i++) {
@@ -223,7 +223,7 @@ void test4(void) {
 void test5(void) {
   jv_pool_t *pool;
 
-  pool = jv_pool_create(log, 1024 * 16, 1);
+  pool = jv_pool_create(_log, 1024 * 16, 1);
 
   jv_pool_alloc(pool, 432141);
   jv_pool_alloc(pool, 10000);
@@ -248,7 +248,7 @@ void test6(void) {
   jv_pool_t *pool;
   char *a, *b, *c, *d;
 
-  pool = jv_pool_create(log, 128, 1);
+  pool = jv_pool_create(_log, 128, 1);
 
   /* printf("sizeof(jv_pool_t): %lu\n",sizeof(jv_pool_t)); */
   printf("pool: %lu, idle: %lu, block: %lu, block->size: %lu, block->next: %lu, lump: %lu, lump->size: %lu, lump->next: %lu\n", (jv_uint_t) pool,
@@ -294,18 +294,13 @@ void test7(void) {
   jv_lump_t *lump[C];
   unsigned i;
 
-  pool = jv_pool_create(log, 1024 * 16, 1);
+  pool = jv_pool_create(_log, 1024 * 16, 1);
 
   srand(time(NULL));
   for (i = 0; i < C; i++) {
     jv_uint_t j = rand() % 5 + 1;
     jv_uint_t k = (rand() % 1024 * 3) + 1;
     assert((lump[i] = jv_pool_alloc(pool, j * k)) != NULL);
-    /* printf("allocate memory size: %lu\n", j); */
-    if (lump == NULL) {
-      printf("allocate memory error: %u\n", i);
-      break;
-    }
   }
 
   printf("---- pool monitor, block count: %u, lump count: %d\n", pool->block_count, pool->lump_count);
@@ -324,7 +319,7 @@ void test7(void) {
 void test8(void) {
   jv_pool_t *pool;
 
-  pool = jv_pool_create(log, 1024 * 16, 1);
+  pool = jv_pool_create(_log, 1024 * 16, 1);
 
   jv_pool_dump(pool, stdout);
 
@@ -345,7 +340,7 @@ void test8(void) {
 void test9(void) {
   jv_pool_t *pool;
 
-  pool = jv_pool_create(log, JV_ALLOC_MIN_SIZE, 1);
+  pool = jv_pool_create(_log, JV_POOL_MIN_SIZE, 1);
 
   jv_pool_alloc(pool, 4432);
   jv_pool_alloc(pool, 412);
@@ -363,7 +358,7 @@ void test9(void) {
 void test10(void) {
   jv_pool_t *pool;
 
-  pool = jv_pool_create(log, JV_ALLOC_MAX_SIZE, 1);
+  pool = jv_pool_create(_log, JV_POOL_MAX_SIZE, 1);
 
   jv_pool_dump(pool, stdout);
 
@@ -379,7 +374,7 @@ void test10(void) {
 }
 
 int main(int argc, char *argv[]) {
-  log = jv_log_create(NULL, JV_LOG_WARN, 0);
+  _log = jv_log_create(NULL, JV_LOG_DEBUG, 0);
 
   printf("test1\n");
   test1();

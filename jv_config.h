@@ -33,4 +33,4 @@
 #define OS_POSIX
 #endif
 
-#endif
+#endif /* _JV_CONFIG_H_INCLUDE_ */

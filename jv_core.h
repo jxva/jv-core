@@ -1,18 +1,17 @@
-#ifndef _JV_CORE_H_INCLUDED_
-#define _JV_CORE_H_INCLUDED_
+#ifndef _JV_CORE_H_INCLUDE_
+#define _JV_CORE_H_INCLUDE_
 
-#include <jv_config.h>
+#include <jv_init.h>
 
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/time.h> /* gettimeofday */
-#include <time.h>
-/* #include <unistd.h> */
+/* typedef enum { JV_ERROR = -1, JV_OK = 0 } jv_bool_t; */
 
 #define JV_OK 0
 #define JV_ERROR -1
+#define JV_AGAIN -2
+#define JV_BUSY -3
+#define JV_DONE -4
+#define JV_DECLINED -5
+#define JV_ABORT -6
 
 #ifndef intptr_t
 #define intptr_t long
@@ -20,6 +19,7 @@
 #endif
 
 #ifndef _UINT64_T
+/* #if JV_PLATFORM_WORD == 32 */
 #ifdef __i386__
 typedef signed long long int64_t;
 typedef unsigned long long uint64_t;
@@ -68,11 +68,11 @@ typedef struct jv_string_s jv_string_t;
 #define jv_memcpy(dst, src, n) (void *) memcpy(dst, src, n)
 #define jv_memmove(dst, src, n) (void *) memmove(dst, src, n)
 
-#define jv_memcmp(s1, s2, n) (int) memcmp(s1, s2, n)
+#define jv_memcmp(s1, s2, n) memcmp(s1, s2, n)
 
 #include <jv_log.h>
 #include <jv_pool.h>
 #include <jv_string.h>
 #include <jv_time.h>
 
-#endif /* _JV_CORE_H_INCLUDED_ */
+#endif /* _JV_CORE_H_INCLUDE_ */

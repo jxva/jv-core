@@ -7,7 +7,13 @@
 *.stackdump
 *.exe
 
-jv_log_main
+main
+
+jv_time_demo
+jv_log_demo
+jv_pool_demo
+jv_time_demo
+
 
 bin/
 obj/

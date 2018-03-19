@@ -5,17 +5,20 @@
 
 typedef jv_uint_t jv_msec_t;
 typedef struct tm jv_tm_t;
-typedef struct timeval jv_timeval_t;
+
+extern volatile jv_msec_t jv_current_msec;
 
 typedef struct {
-  time_t sec;
-  jv_msec_t msec;
-  jv_int_t gmtoff;
+    time_t sec;
+    jv_msec_t msec;
+    jv_int_t gmtoff;
 } jv_time_t;
 
-ssize_t jv_format_timeval(jv_timeval_t *tv, char *buf, size_t sz);
+
+ssize_t jv_format_timeval(struct timeval *tv, char *buf, size_t sz);
 
 ssize_t jv_format_time(time_t sec, char *buf, size_t sz);
+
 
 jv_msec_t jv_time_update(void);
 
@@ -28,6 +31,7 @@ jv_tm_t *jv_time_parse(const u_char *s, jv_tm_t *tm);
 
 time_t jv_time_translate(const jv_tm_t *tm);
 
+
 time_t jv_time_convert(const u_char *s);
 
 char *jv_time_gmt(const time_t t, char buf[30]);
@@ -35,3 +39,4 @@ char *jv_time_gmt(const time_t t, char buf[30]);
 jv_tm_t *jv_localtime(jv_tm_t *tm);
 
 #endif /* _JV_TIME_H_INCLUDE_ */
+
